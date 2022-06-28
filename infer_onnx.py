@@ -15,6 +15,33 @@ class InferOnnx():
     def __init__(self, model_path):
         self.model_path = model_path
         self.sess = self.init_model()
+        self.mean = (0.485, 0.456, 0.406)
+        self.std = (0.229, 0.224, 0.225)
+
+    def preproc(self, input, input_size, swap=(2, 0, 1)):
+        if len(input.shape) == 3:
+            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        else:
+            padded_img = np.ones(input_size, dtype=np.uint8) * 114
+        img = np.array(input)
+        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        resized_img = cv2.resize(
+            img,
+            (int(img.shape[1] * r), int(img.shape[0] * r)),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        image = padded_img
+
+        image = image.astype(np.float32)
+        image = image[:, :, ::-1]
+        image /= 255.0
+        image -= self.mean
+        image /= self.std
+        image = image.transpose(swap)
+
+        image = np.ascontiguousarray(image, dtype=np.float32)
+        return image, r
 
     def preprocess_img(self, img):
         transform = A.Compose([
@@ -31,11 +58,11 @@ class InferOnnx():
         sess = onnxruntime.InferenceSession(self.model_path)
         return sess
 
-    def predict_onnx(self, model_path, img_path):
+    def predict_onnx(self, img_path):
         input_name = self.sess.get_inputs()[0].name
         output_name = self.sess.get_outputs()[0].name
-        img, ratio = self.preprocess_img(img_path)
-        output = self.sess.run([output_name], {input_name: img})
+        img, ratio = self.preproc(img_path, (416, 416))
+        output = self.sess.run(None, {input_name: img[None, :, :, :]})
         pred = demo_postprocess(output[0], (416, 416))[0]
         return pred, ratio
 
@@ -52,7 +79,7 @@ class InferOnnx():
         dets = multiclass_nms(boxes_xyxy, scores, nms_thr=nms_thr, score_thr=0.1)
         return dets
 
-    def visualize(self, dets, origin_img, conf_thr=0.5):
+    def visualize(self, dets, origin_img, conf_thr=0.3):
         if dets is not None:
             final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
             result_img = vis(origin_img, final_boxes, final_scores, final_cls_inds,
@@ -63,13 +90,15 @@ class InferOnnx():
 
     def run(self, img_path, enable_vis=False):
         origin_img = cv2.imread(img_path)
-        origin_img = cv2.cvtColor(origin_img, cv2.COLOR_BGR2RGB)
-        predictions, ratio = self.predict_onnx(model_path, origin_img)
+        # origin_img = cv2.cvtColor(origin_img, cv2.COLOR_BGR2RGB)
+        predictions, ratio = self.predict_onnx(origin_img)
         dets = self.postprocess(predictions, ratio)
         if enable_vis:
             result = self.visualize(dets, origin_img)
+            result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
             plt.imshow(result)
             plt.show()
+            cv2.imwrite('./outputs/prediction.jpg', result)
         return dets
 
     def run_video(self, video_path, enable_vis=False):
@@ -77,16 +106,16 @@ class InferOnnx():
         while True:
             ret, frame = cap.read()
             if ret:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 start = time.time()
-                predictions, ratio = self.predict_onnx(model_path, frame)
+                predictions, ratio = self.predict_onnx(frame)
                 end = time.time()
                 print('Inference time: {}'.format(end - start))
                 print('FPS : {}'.format(1/(end - start)))
                 dets = self.postprocess(predictions, ratio)
                 if enable_vis:
                     result = self.visualize(dets, frame)
-                    result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+                    # result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
                     resize = ResizeWithAspectRatio(result, width=1200)
                     cv2.imshow('result', resize)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -99,6 +128,6 @@ class InferOnnx():
 if __name__ == '__main__':
     model_path = './yolox_v2.onnx'
     model = InferOnnx(model_path)
-    model.run('./office_2.jpg', enable_vis=True)
+    model.run('MIT_Indoor/indoorCVPR_09/MIT_Images/waitingroom/7.jpg', enable_vis=True)
     # model.run_video('./test_kos.mp4', enable_vis=True)
 # %%
