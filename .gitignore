@@ -1,7 +1,8 @@
 MIT_Indoor/
 models/
 outputs/
-testing/
+testing/*.mp4
+openvino/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

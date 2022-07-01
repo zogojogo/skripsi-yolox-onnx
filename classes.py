@@ -1,17 +1,17 @@
 CLASSES = (
     'bed',
-    'cabinet', 
+    # 'cabinet', 
     'chair', 
     'door', 
     'elevator', 
     'fire-extinghuisher', 
     'person', 
-    'refrigerator', 
+    # 'refrigerator', 
     'sofa', 
     'stair', 
     'table', 
     'television', 
     'trashbin', 
-    'wardrobe', 
+    # 'wardrobe', 
     'window'
 )

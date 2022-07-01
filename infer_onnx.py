@@ -116,7 +116,7 @@ class InferOnnx():
                 if enable_vis:
                     result = self.visualize(dets, frame)
                     # result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
-                    resize = ResizeWithAspectRatio(result, width=1200)
+                    resize = ResizeWithAspectRatio(result, width=1000)
                     cv2.imshow('result', resize)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
@@ -126,8 +126,8 @@ class InferOnnx():
 
 #%%
 if __name__ == '__main__':
-    model_path = './yolox_v2.onnx'
+    model_path = './models/4_1/yoloxv4_1.onnx'
     model = InferOnnx(model_path)
-    model.run('MIT_Indoor/indoorCVPR_09/MIT_Images/waitingroom/7.jpg', enable_vis=True)
-    # model.run_video('./test_kos.mp4', enable_vis=True)
+    # model.run('MIT_Indoor/indoorCVPR_09/MIT_Images/waitingroom/7.jpg', enable_vis=True)
+    model.run_video('./testing/test_kos.mp4', enable_vis=True)
 # %%
