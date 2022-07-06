@@ -66,9 +66,12 @@ class InferOnnx():
         input_name = self.sess.get_inputs()[0].name
         output_name = self.sess.get_outputs()[0].name
         img, ratio = self.preproc(img_path, (416, 416))
+        start = time.time()
         output = self.sess.run(None, {input_name: img[None, :, :, :]})
+        end = time.time()
+        inference_time = end - start
         pred = demo_postprocess(output[0], (416, 416))[0]
-        return pred, ratio
+        return pred, ratio, inference_time
 
     def postprocess(self, predictions, ratio, nms_thr=0.5):
         boxes = predictions[:, :4]
@@ -94,16 +97,14 @@ class InferOnnx():
 
     def run(self, img_path, enable_vis=False):
         origin_img = cv2.imread(img_path)
-        start = time.time()
-        predictions, ratio = self.predict_onnx(origin_img)
-        end = time.time()
+        predictions, ratio, time = self.predict_onnx(origin_img)
         dets = self.postprocess(predictions, ratio)
         if enable_vis:
             result = self.visualize(dets, origin_img)
             result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
             plt.imshow(result)
             plt.show()
-            print('FPS : {:.2f}'.format(1 / (end - start)))
+            print('FPS : {:.2f}'.format(1 /(time)))
             cv2.imwrite('./outputs/prediction.jpg', result)
         return dets
 
@@ -112,11 +113,9 @@ class InferOnnx():
         while True:
             ret, frame = cap.read()
             if ret:
-                start = time.time()
-                predictions, ratio = self.predict_onnx(frame)
-                end = time.time()
-                print('Inference time: {:.2f}'.format(end - start))
-                print('FPS : {:.2f}'.format(1 / (end - start)))
+                predictions, ratio, time = self.predict_onnx(frame)
+                print('Inference time: {:.2f}'.format(time))
+                print('FPS : {:.2f}'.format(1 / (time)))
                 dets = self.postprocess(predictions, ratio)
                 if enable_vis:
                     result = self.visualize(dets, frame)
