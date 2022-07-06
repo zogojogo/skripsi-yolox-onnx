@@ -4,13 +4,17 @@ import numpy as np
 import albumentations as A
 import cv2
 import matplotlib.pyplot as plt
-
+import argparse
 import time
 
 from utils import multiclass_nms, demo_postprocess, ResizeWithAspectRatio
 from visualize import vis
 from classes import CLASSES
 #%%
+parser = argparse.ArgumentParser(description='Infer ONNX model')
+parser.add_argument('--mode', type=str, help='Toggle Run Image/Video')
+parser.add_argument('--path', type=str, help='Input Path')
+
 class InferOnnx():
     def __init__(self, model_path):
         self.model_path = model_path
@@ -90,14 +94,16 @@ class InferOnnx():
 
     def run(self, img_path, enable_vis=False):
         origin_img = cv2.imread(img_path)
-        # origin_img = cv2.cvtColor(origin_img, cv2.COLOR_BGR2RGB)
+        start = time.time()
         predictions, ratio = self.predict_onnx(origin_img)
+        end = time.time()
         dets = self.postprocess(predictions, ratio)
         if enable_vis:
             result = self.visualize(dets, origin_img)
             result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
             plt.imshow(result)
             plt.show()
+            print('FPS : {:.2f}'.format(1 / (end - start)))
             cv2.imwrite('./outputs/prediction.jpg', result)
         return dets
 
@@ -106,16 +112,14 @@ class InferOnnx():
         while True:
             ret, frame = cap.read()
             if ret:
-                # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 start = time.time()
                 predictions, ratio = self.predict_onnx(frame)
                 end = time.time()
-                print('Inference time: {}'.format(end - start))
-                print('FPS : {}'.format(1/(end - start)))
+                print('Inference time: {:.2f}'.format(end - start))
+                print('FPS : {:.2f}'.format(1 / (end - start)))
                 dets = self.postprocess(predictions, ratio)
                 if enable_vis:
                     result = self.visualize(dets, frame)
-                    # result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
                     resize = ResizeWithAspectRatio(result, width=1000)
                     cv2.imshow('result', resize)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -126,8 +130,11 @@ class InferOnnx():
 
 #%%
 if __name__ == '__main__':
-    model_path = './models/4_1/yoloxv4_1.onnx'
+    model_path = './model/yoloxv4_1.onnx'
     model = InferOnnx(model_path)
-    # model.run('MIT_Indoor/indoorCVPR_09/MIT_Images/waitingroom/7.jpg', enable_vis=True)
-    model.run_video('./testing/test_kos.mp4', enable_vis=True)
+    args = parser.parse_args()
+    if args.mode == 'video':
+        model.run_video(args.path, enable_vis=True)
+    elif args.mode == 'image':
+        model.run(args.path, enable_vis=True)
 # %%
