@@ -3,6 +3,7 @@ models/
 outputs/
 testing/*.mp4
 openvino/
+Benchmark Data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

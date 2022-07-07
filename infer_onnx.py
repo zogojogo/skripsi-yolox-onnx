@@ -6,14 +6,17 @@ import cv2
 import matplotlib.pyplot as plt
 import argparse
 import time
+import glob
 
 from utils import multiclass_nms, demo_postprocess, ResizeWithAspectRatio
-from visualize import vis
+from visualize import box_to_txt, vis
 from classes import CLASSES
 #%%
 parser = argparse.ArgumentParser(description='Infer ONNX model')
 parser.add_argument('--mode', type=str, help='Toggle Run Image/Video')
 parser.add_argument('--path', type=str, help='Input Path')
+parser.add_argument('--vis', type=bool, help='Toggle Visualize', default=False)
+parser.add_argument('--txt', type=bool, help='Toggle Write Box to .txt', default=False)
 
 class InferOnnx():
     def __init__(self, model_path):
@@ -95,7 +98,7 @@ class InferOnnx():
         else:
             return origin_img
 
-    def run(self, img_path, enable_vis=False):
+    def run(self, img_path, enable_vis=False, write_output = False):
         origin_img = cv2.imread(img_path)
         predictions, ratio, time = self.predict_onnx(origin_img)
         dets = self.postprocess(predictions, ratio)
@@ -106,26 +109,44 @@ class InferOnnx():
             plt.show()
             print('FPS : {:.2f}'.format(1 /(time)))
             cv2.imwrite('./outputs/prediction.jpg', result)
+        if write_output:
+            if dets is not None:
+                final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
+                box_to_txt(img_path, final_boxes, final_scores, final_cls_inds, CLASSES, conf=0.3)
         return dets
 
     def run_video(self, video_path, enable_vis=False):
         cap = cv2.VideoCapture(video_path)
+        imageWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        imageHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter('./outputs/output.mp4', fourcc, fps, (imageWidth, imageHeight))
         while True:
             ret, frame = cap.read()
             if ret:
                 predictions, ratio, time = self.predict_onnx(frame)
-                print('Inference time: {:.2f}'.format(time))
+                print('Inference time: {:.2f} ms'.format(time))
                 print('FPS : {:.2f}'.format(1 / (time)))
                 dets = self.postprocess(predictions, ratio)
                 if enable_vis:
-                    result = self.visualize(dets, frame)
-                    resize = ResizeWithAspectRatio(result, width=1000)
+                    result = self.visualize(dets, frame, conf_thr=0.5)
+                    resize = ResizeWithAspectRatio(result, width=900, height=900)
                     cv2.imshow('result', resize)
+                    out.write(result)
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
             else:
                 break
-        
+        cap.release()
+        out.release()
+        cv2.destroyAllWindows()
+    
+    def run_batches(self, dir_path):
+        for img_path in glob.glob(dir_path + '/*.jpg'):
+            print(img_path)
+            self.run(img_path, enable_vis=False, write_output=True)
+              
 
 #%%
 if __name__ == '__main__':
@@ -135,5 +156,6 @@ if __name__ == '__main__':
     if args.mode == 'video':
         model.run_video(args.path, enable_vis=True)
     elif args.mode == 'image':
-        model.run(args.path, enable_vis=True)
+        model.run(args.path, enable_vis=args.vis, write_output=args.txt)
+    # model.run_batches('Benchmark Data/Testing Kost/test')
 # %%
