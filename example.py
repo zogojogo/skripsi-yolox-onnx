@@ -2,7 +2,7 @@ import skripsi
 import argparse
 import os
 
-model = skripsi.InferOnnx(model_path='model/yoloxv5_1.onnx')
+model = skripsi.InferOnnx(model_path='model/yoloxv6.onnx')
 
 parser = argparse.ArgumentParser(description='Infer ONNX model')
 parser.add_argument('--mode', type=str, help='Toggle Run Image/Video/Batch')

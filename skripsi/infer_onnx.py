@@ -88,6 +88,7 @@ class InferOnnx():
             result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
             plt.imshow(result)
             plt.show()
+            print('Inference Time : {:.3f} ms'.format(time * 1000))
             print('FPS : {:.2f}'.format(1 /(time)))
             cv2.imwrite('./outputs/prediction.jpg', result)
         if write_output:
