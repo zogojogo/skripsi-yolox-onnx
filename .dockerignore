@@ -5,7 +5,6 @@ testing/*.mp4
 openvino/
 Benchmark_Data/*
 mAP/*
-benchmark/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

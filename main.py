@@ -12,9 +12,10 @@ parser.add_argument('--txt', help='Toggle Write Box to .txt', default=False, des
 
 args = parser.parse_args()
 if args.mode == 'video':
-    model.run_video(args.path, enable_vis=True)
+    # os.system('rm -r ./outputs/*')
+    model.run_video(args.path, enable_vis=args.vis)
 elif args.mode == 'image':
     model.run(args.path, enable_vis=args.vis, write_output=args.txt)
-elif args.mode == 'batches':
+elif args.mode == 'batch':
     os.system('rm -r ./outputs/*')
     model.run_batches(args.path)

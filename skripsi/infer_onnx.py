@@ -18,7 +18,7 @@ class InferOnnx():
         self.std = (0.229, 0.224, 0.225)
 
     def init_model(self):
-        sess = onnxruntime.InferenceSession(self.model_path, providers=['CPUExecutionProvider', 'CUDAExecutionProvider'])
+        sess = onnxruntime.InferenceSession(self.model_path, providers=['CPUExecutionProvider'])
         return sess
 
     def preproc(self, input, input_size, swap=(2, 0, 1)):

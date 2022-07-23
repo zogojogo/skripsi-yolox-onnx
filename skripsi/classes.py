@@ -3,7 +3,7 @@ CLASSES = (
     'chair', 
     'door', 
     'elevator', 
-    'fire-extinguisher', 
+    'fire-extinghuisher', 
     'person', 
     'sofa', 
     'stair', 

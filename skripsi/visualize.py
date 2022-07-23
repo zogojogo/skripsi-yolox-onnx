@@ -43,7 +43,7 @@ def vis(img, boxes, scores, cls_ids, conf=0.5, class_names=None):
     return img
 
 def box_to_txt(img_path, boxes, scores, cls_ids, class_names, conf=0.5):
-    img_name = os.path.basename(img_path).strip('.jpg')
+    img_name = os.path.splitext(os.path.basename(img_path))[0]
     output_path = os.path.join('outputs', img_name + '.txt')
     with open(output_path, 'w') as f:
         for i in range(len(boxes)):
