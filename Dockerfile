@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/l4t-tensorrt:r8.0.1-runtime
+FROM nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime
 
 # Install all packages
 RUN apt-get update -y && apt-get upgrade -y && apt-get dist-upgrade &&\
