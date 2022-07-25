@@ -1,14 +1,12 @@
 FROM nvcr.io/nvidia/l4t-tensorrt:r8.2.1-runtime
 
-# Install all packages
-RUN apt-get update -y && apt-get upgrade -y && apt-get dist-upgrade &&\
-    apt-get install ffmpeg libsm6 libxext6 libxrender1 -y 
-    apt-get install -y \
-    python3-dev libpython3-dev python3-tk liblapack-dev build-essential 
+#Install all packages
+RUN rm /etc/apt/sources.list.d/cuda.list
+RUN apt-get update && apt-get upgrade -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-tk
 
 #Python Dependencies
-RUN pip install --upgrade pip
-RUN pip3 install matplotlib opencv_contrib_python tqdm
+RUN pip3 install matplotlib opencv_contrib_python tqdm gdown
 
 # Set working directory
 WORKDIR /home/app
@@ -24,13 +22,18 @@ RUN unzip benchmark.zip
 COPY skripsi/ /home/app/skripsi/
 
 #Model & Benchmark Files
-COPY benchmark/ /home/app/benchmark/
 COPY testing/ /home/app/testing/
 COPY model/yoloxv6.onnx /home/app/model/
-COPY outputs/ /home/app/outputs/
+RUN mkdir outputs
+RUN mkdir cache
 
-# Install ONNXRuntime
-RUN wget https://nvidia.box.com/shared/static/pmsqsiaw4pg9qrbeckcbymho6c01jj4z.whl -O onnxruntime_gpu-1.11.0-cp36-cp36m-linux_aarch64.whl && \
-pip3 install onnxruntime_gpu-1.11.0-cp36-cp36m-linux_aarch64.whl
+#Install ONNXRuntime
+RUN wget https://nvidia.box.com/shared/static/2sv2fv1wseihaw8ym0d4srz41dzljwxh.whl -O onnxruntime_gpu-1.11.0-cp38-cp38-linux_aarch64.whl && \
+pip3 install onnxruntime_gpu-1.11.0-cp38-cp38-linux_aarch64.whl
+
+#To Load TensorRT Model Faster
+RUN python main.py --mode image --path testing/375.jpg
+RUN export ORT_TENSORRT_ENGINE_CACHE_ENABLE=1
+RUN export ORT_TENSORRT_CACHE_PATH="/home/app/cache"
 
 CMD ["/bin/bash"]
