@@ -31,9 +31,4 @@ RUN mkdir cache
 RUN wget https://nvidia.box.com/shared/static/2sv2fv1wseihaw8ym0d4srz41dzljwxh.whl -O onnxruntime_gpu-1.11.0-cp38-cp38-linux_aarch64.whl && \
 pip3 install onnxruntime_gpu-1.11.0-cp38-cp38-linux_aarch64.whl
 
-#To Load TensorRT Model Faster
-RUN python main.py --mode image --path testing/375.jpg
-RUN export ORT_TENSORRT_ENGINE_CACHE_ENABLE=1
-RUN export ORT_TENSORRT_CACHE_PATH="/home/app/cache"
-
 CMD ["/bin/bash"]
