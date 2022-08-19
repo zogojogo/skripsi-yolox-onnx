@@ -14,9 +14,6 @@
 %cd /content/
 !pip install roboflow
 
-from roboflow import Roboflow
-rf = Roboflow(api_key="Nw0fOiahUr0Yd884Rnchj")
-project = rf.workspace("kriswiliant0-gmail-com").project("skripsi-r5rqt")
 dataset = project.version(2).download("voc")
 
 %cd YOLOX
